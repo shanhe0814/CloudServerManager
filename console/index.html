@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CloudServerManager 控制台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/console.css">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- 侧边栏 (不显示在登录页面) -->
+    <aside v-if="!isAuthPage" class="sidebar" :class="{ open: sidebarOpen }">
+      <div class="sidebar-header">
+        <router-link to="/" class="logo">CloudServerManager</router-link>
+        <span class="logo-sub">控制台</span>
+      </div>
+      <nav class="sidebar-nav">
+        <router-link to="/" class="nav-item" exact @click="sidebarOpen = false">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">仪表盘</span>
+        </router-link>
+        <router-link to="/servers" class="nav-item" @click="sidebarOpen = false">
+          <span class="nav-icon">🖥️</span>
+          <span class="nav-text">我的服务器</span>
+        </router-link>
+        <router-link to="/billing" class="nav-item" @click="sidebarOpen = false">
+          <span class="nav-icon">💳</span>
+          <span class="nav-text">账单中心</span>
+        </router-link>
+        <router-link to="/settings" class="nav-item" @click="sidebarOpen = false">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-text">账户设置</span>
+        </router-link>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="../index.html" class="back-link">← 返回主站</a>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content" :class="{ 'no-sidebar': isAuthPage }">
+      <header v-if="!isAuthPage" class="content-header">
+        <button class="menu-toggle" @click="sidebarOpen = !sidebarOpen" aria-label="菜单">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <h1 class="page-title">{{ pageTitle }}</h1>
+        <div class="user-info">
+          <span class="user-name">{{ user.name }}</span>
+          <span class="user-balance">余额: ¥{{ user.balance.toFixed(2) }}</span>
+        </div>
+      </header>
+
+      <!-- 遮罩层 -->
+      <div v-if="!isAuthPage && sidebarOpen" class="sidebar-overlay" :class="{ active: sidebarOpen }" @click="sidebarOpen = false"></div>
+
+      <div class="content-body">
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+CompileFlags:
+  Add: [-std=c++17, -I${workspaceFolder}]
+  Remove: [-W*]
+Diagnostics:
+  UnusedIncludes: Strict
+  ClangTidy:
+    Add: [modernize*, readability*]
+    Remove: [modernize-use-trailing-return-type]
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+Completion:
+  AllScopes: Yes

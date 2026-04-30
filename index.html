@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CloudServerManager - 云端体验</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-bg: #FEDFE1;
+      --secondary-bg: #FFF8F9;
+      --accent: #E8A0B0;
+      --text-primary: #4A4A4A;
+      --text-secondary: #7A7A7A;
+      --card-bg: #FFFFFF;
+      --btn-primary: #D4738A;
+      --btn-hover: #C45C75;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background-color: var(--primary-bg);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    body.menu-open {
+      overflow: hidden;
+    }
+
+    #app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Navigation */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: var(--card-bg);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      z-index: 100;
+      padding: 0 24px;
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--btn-primary);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+    }
+
+    .nav-link {
+      color: var(--text-primary);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      padding: 6px 0;
+      position: relative;
+      transition: color 0.2s;
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--btn-primary);
+      transition: width 0.2s;
+    }
+
+    .nav-link:hover {
+      color: var(--btn-primary);
+    }
+
+    .nav-link:hover::after {
+      width: 100%;
+    }
+
+    .nav-link.router-link-active {
+      color: var(--btn-primary);
+    }
+
+    .nav-link.router-link-active::after {
+      width: 100%;
+    }
+
+    .nav-console {
+      background: #FFF5F6;
+      color: var(--text-primary) !important;
+      padding: 8px 20px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      text-align: center;
+    }
+
+    .nav-console:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      background: #FFF0F2;
+    }
+
+    .nav-console::after {
+      display: none;
+    }
+
+    /* Nav Dropdown */
+    .nav-dropdown {
+      position: relative;
+    }
+
+    .nav-dropdown > .nav-link {
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-dropdown .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--btn-primary);
+      transition: width 0.2s;
+    }
+
+    .nav-dropdown .nav-link.active::after {
+      width: 100%;
+    }
+
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+      padding: 8px 0;
+      min-width: 160px;
+      z-index: 200;
+      margin-top: 0;
+    }
+
+    .nav-dropdown:hover .dropdown-menu {
+      display: block;
+    }
+
+    .dropdown-item {
+      display: block;
+      padding: 10px 20px;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .dropdown-item:hover {
+      background: var(--primary-bg);
+      color: var(--btn-primary);
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: #f0f0f0;
+      margin: 8px 0;
+    }
+
+    /* Mobile Menu */
+    .menu-toggle {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 8px;
+      background: none;
+      border: none;
+    }
+
+    .menu-toggle span {
+      width: 24px;
+      height: 2px;
+      background: var(--text-primary);
+      transition: all 0.3s;
+    }
+
+    .mobile-menu {
+      display: flex;
+      position: fixed;
+      top: 56px;
+      right: 0;
+      bottom: 0;
+      width: 280px;
+      background: var(--card-bg);
+      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+      padding: 24px;
+      flex-direction: column;
+      gap: 8px;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 102;
+      overflow-y: auto;
+    }
+
+    .mobile-menu.active {
+      transform: translateX(0);
+    }
+
+    .mobile-menu .nav-link {
+      padding: 14px 16px;
+      border-radius: 8px;
+      background: transparent;
+      transition: background 0.2s;
+    }
+
+    .mobile-menu .nav-link:hover {
+      background: var(--primary-bg);
+    }
+
+    .mobile-menu .nav-link.router-link-active {
+      background: var(--primary-bg);
+      color: var(--btn-primary);
+    }
+
+    .mobile-menu .nav-link::after {
+      display: none;
+    }
+
+    .mobile-menu .nav-link.sub-item {
+      padding-left: 32px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      top: 56px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 101;
+    }
+
+    .mobile-overlay.active {
+      display: block;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-top: 56px;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(135deg, var(--secondary-bg) 0%, var(--primary-bg) 100%);
+      padding: 80px 24px;
+      text-align: center;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Plans Section */
+    .plans-section {
+      padding: 40px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 32px;
+      color: var(--text-primary);
+    }
+
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .plan-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      transition: transform 0.3s, box-shadow 0.3s;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .plan-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .plan-card.featured {
+      border: 2px solid var(--btn-primary);
+      position: relative;
+    }
+
+    .plan-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--btn-primary);
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 4px 16px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .plan-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .plan-price {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--btn-primary);
+      margin-bottom: 8px;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .plan-price span {
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+    }
+
+    .plan-specs {
+      list-style: none;
+      margin: 24px 0;
+      flex: 1;
+    }
+
+    .plan-specs li {
+      padding: 10px 0;
+      border-bottom: 1px solid #f5f5f5;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .plan-specs li:last-child {
+      border-bottom: none;
+    }
+
+    .plan-btn {
+      background: var(--btn-primary);
+      color: #fff;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: auto;
+    }
+
+    /* Promo Section */
+    .promo-section {
+      padding: 40px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .promo-grid {
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .promo-grid::-webkit-scrollbar {
+      display: none;
+    }
+
+    .promo-card {
+      flex: 0 0 320px;
+      scroll-snap-align: start;
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 28px 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .promo-tag {
+      display: inline-block;
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      width: fit-content;
+    }
+
+    .promo-card h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .promo-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      flex: 1;
+      margin-bottom: 20px;
+    }
+
+    .promo-action {
+      margin-top: auto;
+    }
+
+    .promo-btn {
+      display: inline-block;
+      background: var(--btn-primary);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+
+    .promo-btn:hover {
+      background: var(--btn-hover);
+    }
+
+    /* Stats Section */
+    .stats-section {
+      background: var(--secondary-bg);
+      padding: 40px 24px;
+    }
+
+    .stats-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--btn-primary);
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    /* Promo Nav */
+    .promo-wrapper {
+      position: relative;
+    }
+
+    .promo-nav {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .promo-nav-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: var(--card-bg);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .promo-nav-btn span {
+      font-size: 1.2rem;
+      color: var(--btn-primary);
+      font-weight: 600;
+    }
+
+    .promo-nav-btn.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Footer */
+    .footer {
+      background: var(--card-bg);
+      padding: 32px 24px;
+      text-align: center;
+      margin-top: auto;
+    }
+
+    .footer-contact {
+      max-width: 600px;
+      margin: 0 auto 24px;
+    }
+
+    .footer-contact h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-primary);
+    }
+
+    .footer-contact p {
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .footer-contact a {
+      color: var(--btn-primary);
+      text-decoration: none;
+    }
+
+    .footer-contact a:hover {
+      text-decoration: underline;
+    }
+
+    .footer-copyright {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      padding-top: 16px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    /* Page Header */
+    .page-header {
+      background: linear-gradient(135deg, var(--secondary-bg) 0%, var(--primary-bg) 100%);
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    .page-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .page-header p {
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Sub nav */
+    .sub-nav {
+      background: var(--card-bg);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      padding: 0 24px;
+    }
+
+    .sub-nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 16px 0;
+    }
+
+    .sub-nav-link {
+      padding: 10px 24px;
+      border-radius: 20px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .sub-nav-link:hover {
+      background: var(--primary-bg);
+      color: var(--btn-primary);
+    }
+
+    .sub-nav-link.router-link-active {
+      background: var(--btn-primary);
+      color: #fff;
+    }
+
+    /* Cloud Categories */
+    .cloud-categories {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .cloud-category-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cloud-category-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .category-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+    }
+
+    .cloud-category-card h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .cloud-category-card p {
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      flex: 1;
+    }
+
+    .cloud-category-card ul {
+      list-style: none;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
+    .cloud-category-card li {
+      padding: 8px 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    .cloud-category-card li:last-child {
+      border-bottom: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .menu-toggle {
+        display: flex;
+      }
+
+      .hero {
+        padding: 48px 24px;
+      }
+
+      .hero-title {
+        font-size: 1.8rem;
+      }
+
+      .hero-subtitle {
+        font-size: 1rem;
+      }
+
+      .plans-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+
+      .section-title {
+        font-size: 1.5rem;
+        margin-bottom: 32px;
+      }
+
+      .page-header {
+        padding: 40px 24px;
+      }
+
+      .page-header h1 {
+        font-size: 1.6rem;
+      }
+
+      .sub-nav {
+        padding: 0 16px;
+      }
+
+      .sub-nav-container {
+        gap: 8px;
+        padding: 12px 0;
+      }
+
+      .sub-nav-link {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+      }
+
+      .cloud-categories {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+
+      .plan-card {
+        padding: 24px 16px;
+      }
+
+      .plan-card .plan-price {
+        font-size: 1.2rem;
+        word-break: break-all;
+      }
+
+      .plan-card .plan-price span {
+        font-size: 0.8rem;
+      }
+    }
+
+    /* IDC Features */
+    .idc-features {
+      background: var(--secondary-bg);
+      padding: 40px 24px;
+      margin-top: 24px;
+    }
+
+    .idc-features-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 28px 24px;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .idc-features {
+        padding: 40px 24px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+      }
+
+      .stat-num {
+        font-size: 1.5rem;
+      }
+
+      .promo-card {
+        flex: 0 0 calc(100vw - 48px);
+      }
+
+      .promo-grid {
+        padding: 0 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <router-link to="/" class="logo">CloudServerManager</router-link>
+        <div class="nav-links">
+          <router-link to="/" class="nav-link" exact>主页</router-link>
+          <div class="nav-dropdown">
+            <router-link to="/cloudserver" class="nav-link" :class="{ active: isProductActive }">产品</router-link>
+            <div class="dropdown-menu">
+              <router-link to="/performance" class="dropdown-item">性能云</router-link>
+              <router-link to="/budget" class="dropdown-item">普惠云</router-link>
+              <router-link to="/gpu" class="dropdown-item">GPU云</router-link>
+              <div class="dropdown-divider"></div>
+              <router-link to="/idc" class="dropdown-item">机房托管</router-link>
+            </div>
+          </div>
+          <router-link to="/contact" class="nav-link">联系我们</router-link>
+          <a href="https://96d750b7294e4486b757dbfa1a2566c2--8001.ap-shanghai2.cloudstudio.club/#/" class="nav-link nav-console" target="_blank">控制台</a>
+        </div>
+        <button class="menu-toggle" @click="mobileMenuOpen = !mobileMenuOpen" aria-label="菜单">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-overlay" :class="{ active: mobileMenuOpen }" @click="mobileMenuOpen = false"></div>
+    <div class="mobile-menu" :class="{ active: mobileMenuOpen }">
+      <router-link to="/" class="nav-link" exact @click="mobileMenuOpen = false">主页</router-link>
+      <router-link to="/cloudserver" class="nav-link" @click="mobileMenuOpen = false">产品</router-link>
+      <router-link to="/performance" class="nav-link sub-item" @click="mobileMenuOpen = false">性能云</router-link>
+      <router-link to="/budget" class="nav-link sub-item" @click="mobileMenuOpen = false">普惠云</router-link>
+      <router-link to="/gpu" class="nav-link sub-item" @click="mobileMenuOpen = false">GPU云</router-link>
+      <router-link to="/idc" class="nav-link sub-item" @click="mobileMenuOpen = false">机房托管</router-link>
+      <router-link to="/contact" class="nav-link" @click="mobileMenuOpen = false">联系我们</router-link>
+      <a href="https://96d750b7294e4486b757dbfa1a2566c2--8001.ap-shanghai2.cloudstudio.club/#/" class="nav-link nav-console" target="_blank">控制台</a>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" id="footer">
+      <div class="footer-contact">
+        <h3>联系我们</h3>
+        <p>售前咨询: <a href="tel:400-888-8888">400-888-8888</a></p>
+        <p>技术支持: <a href="mailto:support@cloudserve.com">support@cloudserve.com</a></p>
+        <p>工作时间: 周一至周五 9:00 - 18:00</p>
+      </div>
+      <p class="footer-copyright">© 2026 CloudServerManager. All rights reserved.</p>
+    </footer>
+  </div>
+
+  <script>
+    const { createApp } = Vue
+    const { createRouter, createWebHashHistory } = VueRouter
+
+    // Home Page
+    const HomePage = {
+      template: `
+        <div>
+          <section class="hero" id="home">
+            <h1 class="hero-title">畅享稳定高效的云端体验</h1>
+            <p class="hero-subtitle">企业级云服务器，即开即用。灵活扩展，安全可靠，助力您的业务飞速发展。</p>
+          </section>
+          <section class="promo-section">
+            <h2 class="section-title">热门活动</h2>
+            <div class="promo-wrapper">
+              <div class="promo-grid" ref="promoGrid" @scroll="onScroll" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd" @mouseenter="stopAutoScroll" @mouseleave="startAutoScroll">
+                <div class="promo-card" v-for="promo in promos" :key="promo.id">
+                  <div class="promo-tag" :style="{ background: promo.tagColor }">{{ promo.tag }}</div>
+                  <h3>{{ promo.title }}</h3>
+                  <p>{{ promo.desc }}</p>
+                  <div class="promo-action">
+                    <router-link :to="promo.link" class="promo-btn">立即参与</router-link>
+                  </div>
+                </div>
+              </div>
+              <div class="promo-nav" v-if="isMobile() && promos.length > 1">
+                <button class="promo-nav-btn prev" :class="{ disabled: !canScrollPrev }" @click="scrollPrev">
+                  <span>&lt;</span>
+                </button>
+                <button class="promo-nav-btn next" :class="{ disabled: !canScrollNext }" @click="scrollNext">
+                  <span>&gt;</span>
+                </button>
+              </div>
+            </div>
+          </section>
+          <section class="stats-section">
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div class="stat-num">99.99%</div>
+                <div class="stat-label">SLA 保障</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num">10+</div>
+                <div class="stat-label">数据中心</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num">7×24</div>
+                <div class="stat-label">技术支持</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num">5万+</div>
+                <div class="stat-label">企业用户</div>
+              </div>
+            </div>
+          </section>
+        </div>
+      `,
+      data() {
+        return {
+          promos: [
+            { id: 1, tag: '限时优惠', tagColor: '#D4738A', title: '新用户首月 5 折', desc: '首次购买云服务器，享受首月 5 折优惠，最低仅需 15 元起', link: '/performance' },
+            { id: 2, tag: '满减活动', tagColor: '#E8A0B0', title: '年付满减 20%', desc: '年付云服务器订单，满 1000 元减 200 元，续费同享优惠', link: '/budget' },
+            { id: 3, tag: '限时优惠', tagColor: '#D4738A', title: 'GPU 训练套餐特惠', desc: 'A100/H100 训练实例限时 8 折，批量购买更低至 7 折', link: '/gpu' }
+          ],
+          userInteractionTimer: null,
+          autoScrollTimer: null,
+          currentIndex: 0,
+          canScrollPrev: false,
+          canScrollNext: true,
+          touchStartX: 0,
+          touchStartTime: 0,
+          touchCurrentX: 0,
+          isTouchScrolling: false
+        }
+      },
+      mounted() {
+        this.startAutoScroll()
+        window.addEventListener('resize', this.handleResize)
+      },
+      beforeUnmount() {
+        this.stopAutoScroll()
+        if (this.userInteractionTimer) {
+          clearTimeout(this.userInteractionTimer)
+        }
+        window.removeEventListener('resize', this.handleResize)
+      },
+      methods: {
+        isMobile() {
+          return window.innerWidth < 768
+        },
+        handleResize() {
+          if (this.isMobile()) {
+            this.startAutoScroll()
+          } else {
+            this.stopAutoScroll()
+          }
+        },
+        startAutoScroll() {
+          if (!this.isMobile()) return
+          this.stopAutoScroll()
+          this.autoScrollTimer = setInterval(() => {
+            const grid = this.$refs.promoGrid
+            if (!grid) return
+            const firstCard = grid.querySelector('.promo-card')
+            if (!firstCard) return
+            const cardWidth = firstCard.offsetWidth + 24
+            this.currentIndex = (this.currentIndex + 1) % this.promos.length
+            grid.scrollTo({
+              left: this.currentIndex * cardWidth,
+              behavior: 'smooth'
+            })
+          }, 3000)
+        },
+        stopAutoScroll() {
+          if (this.autoScrollTimer) {
+            clearInterval(this.autoScrollTimer)
+            this.autoScrollTimer = null
+          }
+        },
+        resetAutoScrollTimer() {
+          this.stopAutoScroll()
+          if (this.userInteractionTimer) {
+            clearTimeout(this.userInteractionTimer)
+          }
+          this.userInteractionTimer = setTimeout(() => {
+            this.startAutoScroll()
+          }, 5000)
+        },
+        onScroll() {
+          const grid = this.$refs.promoGrid
+          if (!grid) return
+          const cardWidth = grid.querySelector('.promo-card').offsetWidth + 24
+          const scrollLeft = grid.scrollLeft
+          const index = Math.round(scrollLeft / cardWidth)
+          this.currentIndex = Math.min(index, this.promos.length - 1)
+
+          const maxIndex = this.promos.length - 1
+          const threshold = cardWidth / 2
+          this.canScrollPrev = scrollLeft > threshold
+          this.canScrollNext = this.currentIndex < maxIndex && (scrollLeft + grid.clientWidth) < (grid.scrollWidth - threshold)
+        },
+        scrollPrev() {
+          if (!this.canScrollPrev) return
+          this.resetAutoScrollTimer()
+          const grid = this.$refs.promoGrid
+          if (!grid) return
+          const cardWidth = grid.querySelector('.promo-card').offsetWidth + 24
+          this.currentIndex = Math.max(0, this.currentIndex - 1)
+          grid.scrollTo({
+            left: this.currentIndex * cardWidth,
+            behavior: 'smooth'
+          })
+        },
+        scrollNext() {
+          if (!this.canScrollNext) return
+          this.resetAutoScrollTimer()
+          const grid = this.$refs.promoGrid
+          if (!grid) return
+          const cardWidth = grid.querySelector('.promo-card').offsetWidth + 24
+          this.currentIndex = Math.min(this.promos.length - 1, this.currentIndex + 1)
+          grid.scrollTo({
+            left: this.currentIndex * cardWidth,
+            behavior: 'smooth'
+          })
+        },
+        goToSlide(index) {
+          this.resetAutoScrollTimer()
+          const grid = this.$refs.promoGrid
+          if (!grid) return
+          const cardWidth = grid.querySelector('.promo-card').offsetWidth + 24
+          this.currentIndex = index
+          grid.scrollTo({
+            left: this.currentIndex * cardWidth,
+            behavior: 'smooth'
+          })
+        },
+        onTouchStart(e) {
+          this.touchStartX = e.touches[0].clientX
+          this.touchStartTime = Date.now()
+          this.isTouchScrolling = true
+          this.resetAutoScrollTimer()
+        },
+        onTouchMove(e) {
+          if (!this.isTouchScrolling) return
+          this.touchCurrentX = e.touches[0].clientX
+        },
+        onTouchEnd(e) {
+          if (!this.isTouchScrolling) return
+          this.isTouchScrolling = false
+          const grid = this.$refs.promoGrid
+          if (!grid) return
+          const cardWidth = grid.querySelector('.promo-card').offsetWidth + 24
+          const deltaX = this.touchStartX - this.touchCurrentX
+          const deltaTime = Date.now() - this.touchStartTime
+          const velocity = Math.abs(deltaX) / deltaTime
+          const isFastSwipe = velocity > 10
+          if (isFastSwipe && Math.abs(deltaX) > 150) {
+            grid.style.scrollBehavior = 'auto'
+            if (deltaX > 0 && this.currentIndex < this.promos.length - 1) {
+              this.currentIndex++
+            } else if (deltaX < 0 && this.currentIndex > 0) {
+              this.currentIndex--
+            }
+            grid.scrollTo({
+              left: this.currentIndex * cardWidth
+            })
+            setTimeout(() => {
+              grid.style.scrollBehavior = 'smooth'
+            }, 50)
+          }
+        }
+      }
+    }
+
+    // Performance Cloud Page
+    const PerformancePage = {
+      template: `
+        <div>
+          <div class="page-header">
+            <h1>性能云服务器</h1>
+            <p>高主频处理器，搭载 AMD Ryzen 9 9950X / Intel i9-14900K，专为计算密集型业务设计</p>
+          </div>
+          <div class="sub-nav">
+            <div class="sub-nav-container">
+              <router-link to="/performance" class="sub-nav-link" exact>通用型</router-link>
+              <router-link to="/performance/compute" class="sub-nav-link">计算优化型</router-link>
+              <router-link to="/performance/memory" class="sub-nav-link">内存优化型</router-link>
+            </div>
+          </div>
+          <section class="plans-section">
+            <div class="plans-grid">
+              <div class="plan-card" v-for="plan in plans" :key="plan.id" :class="{ featured: plan.featured }">
+                <span v-if="plan.featured" class="plan-badge">热门推荐</span>
+                <h3 class="plan-name">{{ plan.name }}</h3>
+                <div class="plan-price">
+                  ¥{{ plan.price }}<span>/月</span>
+                </div>
+                <ul class="plan-specs">
+                  <li>{{ plan.cpu }}</li>
+                  <li>{{ plan.memory }}</li>
+                  <li>{{ plan.bandwidth }}</li>
+                  <li>{{ plan.storage }}</li>
+                  <li>{{ plan.scenario }}</li>
+                </ul>
+                <button class="plan-btn">立即购买</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      `,
+      data() {
+        return {
+          plans: [
+            { id: 1, name: 'Ryzen Pro', price: 149, cpu: 'AMD Ryzen 9 9950X', memory: '4核 4.5GHz', bandwidth: '5Mbps', storage: '100GB NVMe', scenario: '游戏服务器、视频编码', featured: false },
+            { id: 2, name: 'Core Elite', price: 199, cpu: 'Intel i9-14900K', memory: '8核 5.6GHz', bandwidth: '10Mbps', storage: '200GB NVMe', scenario: '渲染农场、科学计算', featured: true },
+            { id: 3, name: 'EPYC Max', price: 299, cpu: 'AMD EPYC 9684X', memory: '12核 4.0GHz', bandwidth: '20Mbps', storage: '500GB NVMe', scenario: '高性能计算、深度学习', featured: false }
+          ]
+        }
+      }
+    }
+
+    // Budget Cloud Page
+    const BudgetPage = {
+      template: `
+        <div>
+          <div class="page-header">
+            <h1>普惠云服务器</h1>
+            <p>基于 Intel Xeon / AMD EPYC 处理器，性价比优先，适合长期稳定运行的工作负载</p>
+          </div>
+          <div class="sub-nav">
+            <div class="sub-nav-container">
+              <router-link to="/budget" class="sub-nav-link" exact>通用型</router-link>
+              <router-link to="/budget/storage" class="sub-nav-link">存储优化型</router-link>
+              <router-link to="/budget/network" class="sub-nav-link">网络优化型</router-link>
+            </div>
+          </div>
+          <section class="plans-section">
+            <div class="plans-grid">
+              <div class="plan-card" v-for="plan in plans" :key="plan.id" :class="{ featured: plan.featured }">
+                <span v-if="plan.featured" class="plan-badge">热门推荐</span>
+                <h3 class="plan-name">{{ plan.name }}</h3>
+                <div class="plan-price">
+                  ¥{{ plan.price }}<span>/月</span>
+                </div>
+                <ul class="plan-specs">
+                  <li>{{ plan.cpu }}</li>
+                  <li>{{ plan.memory }}</li>
+                  <li>{{ plan.bandwidth }}</li>
+                  <li>{{ plan.storage }}</li>
+                  <li>{{ plan.scenario }}</li>
+                </ul>
+                <button class="plan-btn">立即购买</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      `,
+      data() {
+        return {
+          plans: [
+            { id: 1, name: 'Xeon Basic', price: 39, cpu: 'Intel Xeon E-22xx', memory: '2核 3.5GHz', bandwidth: '2Mbps', storage: '80GB SSD', scenario: '个人博客、开发测试', featured: false },
+            { id: 2, name: 'EPYC Value', price: 69, cpu: 'AMD EPYC 7302', memory: '4核 3.0GHz', bandwidth: '5Mbps', storage: '150GB SSD', scenario: '企业官网、小型数据库', featured: true },
+            { id: 3, name: 'Xeon Power', price: 129, cpu: 'Intel Xeon Gold', memory: '8核 3.8GHz', bandwidth: '10Mbps', storage: '300GB SSD', scenario: '中型数据库、企业应用', featured: false }
+          ]
+        }
+      }
+    }
+
+    // GPU Cloud Page
+    const GPUPage = {
+      template: `
+        <div>
+          <div class="page-header">
+            <h1>GPU云服务器</h1>
+            <p>配备 NVIDIA RTX / A100 / H100 系列显卡，加速 AI 推理、深度学习、视频处理</p>
+          </div>
+          <div class="sub-nav">
+            <div class="sub-nav-container">
+              <router-link to="/gpu" class="sub-nav-link" exact>推理型</router-link>
+              <router-link to="/gpu/training" class="sub-nav-link">训练型</router-link>
+              <router-link to="/gpu/hpc" class="sub-nav-link">HPC 高性能</router-link>
+            </div>
+          </div>
+          <section class="plans-section">
+            <div class="plans-grid">
+              <div class="plan-card" v-for="plan in plans" :key="plan.id" :class="{ featured: plan.featured }">
+                <span v-if="plan.featured" class="plan-badge">热门推荐</span>
+                <h3 class="plan-name">{{ plan.name }}</h3>
+                <div class="plan-price">
+                  ¥{{ plan.price }}<span>/月</span>
+                </div>
+                <ul class="plan-specs">
+                  <li>{{ plan.gpu }}</li>
+                  <li>{{ plan.cpu }}</li>
+                  <li>{{ plan.memory }}</li>
+                  <li>{{ plan.storage }}</li>
+                  <li>{{ plan.scenario }}</li>
+                </ul>
+                <button class="plan-btn">立即购买</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      `,
+      data() {
+        return {
+          plans: [
+            { id: 1, name: 'RTX 推理版', price: 299, gpu: 'NVIDIA RTX 4090', cpu: '8核', memory: '32GB', storage: '200GB NVMe', scenario: 'AI 推理、图像生成', featured: false },
+            { id: 2, name: 'A100 训练版', price: 599, gpu: 'NVIDIA A100 40GB', cpu: '16核', memory: '64GB', storage: '500GB NVMe', scenario: '深度学习训练、模型微调', featured: true },
+            { id: 3, name: 'H100 旗舰版', price: 1299, gpu: 'NVIDIA H100 80GB', cpu: '32核', memory: '128GB', storage: '1TB NVMe', scenario: '大模型训练、科学计算', featured: false }
+          ]
+        }
+      }
+    }
+
+    // Contact Page
+    const ContactPage = {
+      template: `
+        <div>
+          <div class="page-header">
+            <h1>联系我们</h1>
+            <p>7×24 小时技术支持，随时为您服务</p>
+          </div>
+          <section class="plans-section">
+            <div class="plans-grid">
+              <div class="plan-card">
+                <h3 class="plan-name">售前咨询</h3>
+                <div class="plan-price" style="font-size: 1.5rem;">400-888-8888</div>
+                <ul class="plan-specs">
+                  <li>周一至周日 9:00 - 21:00</li>
+                  <li>产品方案咨询</li>
+                  <li>定制化需求</li>
+                </ul>
+                <button class="plan-btn">在线咨询</button>
+              </div>
+              <div class="plan-card">
+                <h3 class="plan-name">技术支持</h3>
+                <div class="plan-price" style="font-size: 1.5rem;">400-888-8889</div>
+                <ul class="plan-specs">
+                  <li>7×24 小时在线</li>
+                  <li>故障排查</li>
+                  <li>性能优化</li>
+                </ul>
+                <button class="plan-btn">提交工单</button>
+              </div>
+              <div class="plan-card">
+                <h3 class="plan-name">商务合作</h3>
+                <div class="plan-price" style="font-size: 1.5rem;">business@cloudserve.com</div>
+                <ul class="plan-specs">
+                  <li>渠道代理</li>
+                  <li>大客户服务</li>
+                  <li>战略合作</li>
+                </ul>
+                <button class="plan-btn">发送邮件</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      `
+    }
+
+    // IDC Colocation Page
+    const IDCTemplate = `
+      <div>
+        <div class="page-header">
+          <h1>机房托管服务</h1>
+          <p>专业数据中心托管，安全可靠，网络畅通</p>
+        </div>
+        <div class="sub-nav">
+          <div class="sub-nav-container">
+            <router-link to="/idc" class="sub-nav-link" exact>机柜托管</router-link>
+            <router-link to="/idc/bandwidth" class="sub-nav-link">带宽升级</router-link>
+            <router-link to="/idc/ips" class="sub-nav-link">IP服务</router-link>
+          </div>
+        </div>
+        <section class="plans-section">
+          <h2 class="section-title">机柜托管套餐</h2>
+          <div class="plans-grid">
+            <div class="plan-card" v-for="plan in plans" :key="plan.id" :class="{ featured: plan.featured }">
+              <span v-if="plan.featured" class="plan-badge">热门推荐</span>
+              <h3 class="plan-name">{{ plan.name }}</h3>
+              <div class="plan-price">
+                ¥{{ plan.price }}<span>/月</span>
+              </div>
+              <ul class="plan-specs">
+                <li>{{ plan.cabinet }}</li>
+                <li>{{ plan.power }}</li>
+                <li>{{ plan.bandwidth }}</li>
+                <li>{{ plan.ip }}</li>
+                <li>{{ plan.protection }}</li>
+              </ul>
+              <button class="plan-btn">立即咨询</button>
+            </div>
+          </div>
+        </section>
+        <section class="idc-features">
+          <div class="idc-features-container">
+            <h2 class="section-title">为什么选择我们</h2>
+            <div class="features-grid">
+              <div class="feature-card">
+                <div class="feature-icon">🏢</div>
+                <h3>T3+ 等级数据中心</h3>
+                <p>符合国际标准的高可用数据中心，99.99% SLA 保障</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>双路市电接入</h3>
+                <p>独立变电站，2N 冗余UPS，柴发备用保障</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <h3>多线 BGP 带宽</h3>
+                <p>电信、联通、移动、教育网全运营商接入，智能路由</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>全方位安防</h3>
+                <p>7×24 小时安保、视频监控、门禁系统</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">🔥</div>
+                <h3>温控散热</h3>
+                <p>精密空调、封闭冷通道、液冷散热可选</p>
+              </div>
+              <div class="feature-card">
+                <div class="feature-icon">🛠️</div>
+                <h3>驻场运维</h3>
+                <p>专业工程师 7×24 小时值守，支持远程重启</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    `
+
+    const IDCPage = {
+      template: IDCTemplate,
+      data() {
+        return {
+          plans: [
+            { id: 1, name: '入门型', price: 1999, cabinet: '1/2 机柜', power: '4KW', bandwidth: '10Mbps', ip: '2个IP', protection: '100Gbps DDoS防护', featured: false },
+            { id: 2, name: '标准型', price: 3999, cabinet: '1 机柜', power: '8KW', bandwidth: '50Mbps', ip: '5个IP', protection: '200Gbps DDoS防护', featured: true },
+            { id: 3, name: '旗舰型', price: 5999, cabinet: '2 机柜', power: '16KW', bandwidth: '100Mbps', ip: '10个IP', protection: '无限防护', featured: false }
+          ]
+        }
+      }
+    }
+
+    // Cloud Server Overview Page
+    const CloudServerManagerrPage = {
+      template: `
+        <div>
+          <div class="page-header">
+            <h1>云服务器</h1>
+            <p>选择最适合您业务的云服务器类型</p>
+          </div>
+          <div class="sub-nav">
+            <div class="sub-nav-container">
+              <router-link to="/performance" class="sub-nav-link">性能云</router-link>
+              <router-link to="/budget" class="sub-nav-link">普惠云</router-link>
+              <router-link to="/gpu" class="sub-nav-link">GPU云</router-link>
+            </div>
+          </div>
+          <section class="plans-section">
+            <div class="cloud-categories">
+              <div class="cloud-category-card" @click="$router.push('/performance')">
+                <div class="category-icon">🚀</div>
+                <h3>性能云</h3>
+                <p>高主频处理器，适合计算密集型业务</p>
+                <ul>
+                  <li>AMD Ryzen 9 9950X</li>
+                  <li>Intel i9-14900K</li>
+                  <li>AMD EPYC 9684X</li>
+                </ul>
+                <button class="plan-btn">了解更多</button>
+              </div>
+              <div class="cloud-category-card" @click="$router.push('/budget')">
+                <div class="category-icon">💰</div>
+                <h3>普惠云</h3>
+                <p>高性价比，适合长期稳定运行</p>
+                <ul>
+                  <li>Intel Xeon E-22xx</li>
+                  <li>AMD EPYC 7302</li>
+                  <li>Intel Xeon Gold</li>
+                </ul>
+                <button class="plan-btn">了解更多</button>
+              </div>
+              <div class="cloud-category-card" @click="$router.push('/gpu')">
+                <div class="category-icon">🎮</div>
+                <h3>GPU云</h3>
+                <p> NVIDIA 显卡，加速 AI 与计算</p>
+                <ul>
+                  <li>NVIDIA RTX 4090</li>
+                  <li>NVIDIA A100 40GB</li>
+                  <li>NVIDIA H100 80GB</li>
+                </ul>
+                <button class="plan-btn">了解更多</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      `
+    }
+
+    // Routes
+    const routes = [
+      { path: '/', component: HomePage },
+      { path: '/cloudserver', component: CloudServerManagerrPage },
+      { path: '/performance', component: PerformancePage },
+      { path: '/performance/compute', component: PerformancePage },
+      { path: '/performance/memory', component: PerformancePage },
+      { path: '/budget', component: BudgetPage },
+      { path: '/budget/storage', component: BudgetPage },
+      { path: '/budget/network', component: BudgetPage },
+      { path: '/gpu', component: GPUPage },
+      { path: '/gpu/training', component: GPUPage },
+      { path: '/gpu/hpc', component: GPUPage },
+      { path: '/idc', component: IDCPage },
+      { path: '/idc/bandwidth', component: IDCPage },
+      { path: '/idc/ips', component: IDCPage },
+      { path: '/contact', component: ContactPage }
+    ]
+
+    // Router
+    const router = createRouter({
+      history: createWebHashHistory(),
+      routes,
+      scrollBehavior(to, from, savedPosition) {
+        if (savedPosition) {
+          return savedPosition
+        } else {
+          return { top: 0 }
+        }
+      }
+    })
+
+    // App
+    createApp({
+      data() {
+        return {
+          mobileMenuOpen: false
+        }
+      },
+      computed: {
+        isProductActive() {
+          const path = this.$route.path
+          return path.startsWith('/performance') || path.startsWith('/budget') || path.startsWith('/gpu') || path.startsWith('/idc') || path === '/cloudserver'
+        }
+      },
+      watch: {
+        mobileMenuOpen(isOpen) {
+          document.body.classList.toggle('menu-open', isOpen)
+        }
+      }
+    }).use(router).mount('#app')
+  </script>
+</body>
+</html>

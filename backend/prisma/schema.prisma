@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  phone        String?   @unique
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  account      Account?
+  instances    Instance[]
+  orders       Order[]
+  transactions Transaction[]
+
+  @@map("user")
+}
+
+model Account {
+  id            String   @id @default(uuid())
+  userId        String   @unique @map("user_id")
+  balance       Decimal  @default(0) @db.Decimal(10, 2)
+  frozenAmount  Decimal  @default(0) @map("frozen_amount") @db.Decimal(10, 2)
+  totalCharged  Decimal  @default(0) @map("total_charged") @db.Decimal(10, 2)
+  totalConsumed Decimal  @default(0) @map("total_consumed") @db.Decimal(10, 2)
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("account")
+}
+
+model Plan {
+  id        String   @id @default(uuid())
+  name      String
+  category  String   // performance, budget, gpu, idc
+  price     Decimal  @db.Decimal(10, 2)
+  specs     Json     // {cpu, memory, bandwidth, storage, gpu?}
+  status    String   @default("active") // active, deprecated
+  createdAt DateTime @default(now()) @map("created_at")
+
+  instances Instance[]
+  orders    Order[]
+
+  @@map("plan")
+}
+
+model Instance {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  name        String
+  planId      String?   @map("plan_id")
+  status      String    @default("pending") // pending, running, stopped, reinstalling, deleted
+  ipAddress   String?   @map("ip_address")
+  specs       Json?     // 实际使用的规格
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+  plan Plan? @relation(fields: [planId], references: [id])
+  orders Order[]
+
+  @@map("instance")
+}
+
+model Order {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  instanceId   String?   @map("instance_id")
+  planId       String?   @map("plan_id")
+  amount       Decimal   @db.Decimal(10, 2)
+  periodMonths Int       @default(1) @map("period_months")
+  status       String    @default("pending") // pending, paid, cancelled, refunded
+  payChannel   String?   @map("pay_channel") // wechat, alipay, balance
+  tradeNo      String?   @map("trade_no")
+  paidAt       DateTime? @map("paid_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [userId], references: [id])
+  instance Instance? @relation(fields: [instanceId], references: [id])
+  plan     Plan?     @relation(fields: [planId], references: [id])
+  payment  Payment?
+
+  @@map("order")
+}
+
+model Transaction {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  type          String   // recharge, consume, refund, freeze, unfreeze
+  amount        Decimal  @db.Decimal(10, 2)
+  balanceBefore Decimal? @map("balance_before") @db.Decimal(10, 2)
+  balanceAfter  Decimal? @map("balance_after") @db.Decimal(10, 2)
+  orderId       String?  @map("order_id")
+  remark        String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("transaction")
+}
+
+model Payment {
+  id           String    @id @default(uuid())
+  orderId      String    @unique @map("order_id")
+  channel      String    // wechat, alipay
+  status       String    @default("pending") // pending, success, failed, closed
+  totalAmount  Decimal   @map("total_amount") @db.Decimal(10, 2)
+  actualAmount Decimal?  @map("actual_amount") @db.Decimal(10, 2)
+  tradeNo      String?   @map("trade_no")
+  notifyData   Json?     @map("notify_data")
+  notifyTime   DateTime? @map("notify_time")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("payment")
+}
