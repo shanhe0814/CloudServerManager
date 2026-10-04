@@ -19,5 +19,5 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 
-echo "[start] WARNING: PostgreSQL did not report ready within timeout." >&2
-exit 0
+echo "[start] ERROR: PostgreSQL did not report ready within timeout." >&2
+exit 1
