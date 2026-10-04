@@ -1,0 +1,25 @@
+{
+  "name": "CloudServerManager",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "backend-api",
+      "command": "cd backend && npm start"
+    },
+    {
+      "name": "frontend",
+      "command": "python3 -m http.server 8080"
+    }
+  ],
+  "ports": [
+    {
+      "name": "frontend",
+      "port": 8080
+    },
+    {
+      "name": "backend-api",
+      "port": 3000
+    }
+  ]
+}
